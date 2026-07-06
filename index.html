@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aztlan · Sistema de Cumplimiento (M365)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/msal-browser/2.38.3/msal-browser.min.js"></script>
+<style>
+:root{
+  --navy:#221D55; --gold:#F5C400; --green:#42825D; --slate:#7F8FA9;
+  --dark:#404040; --bg:#F4F2ED; --white:#FFFFFF;
+  --navy-light:#332C77; --red:#B3452C;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+body{background:var(--bg);color:var(--dark);min-height:100vh}
+header{background:var(--navy);color:var(--white);padding:14px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-size:20px;font-weight:600;letter-spacing:2px}
+header h1 span{color:var(--gold)}
+.role-box{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px}
+nav{background:var(--white);border-bottom:3px solid var(--gold);display:flex;gap:4px;padding:0 20px;overflow-x:auto}
+nav button{background:none;border:none;padding:14px 18px;font-size:14px;font-weight:600;color:var(--slate);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-3px;white-space:nowrap}
+nav button.active{color:var(--navy);border-bottom-color:var(--navy)}
+nav button:hover{color:var(--navy)}
+main{max-width:1150px;margin:24px auto;padding:0 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.card{background:var(--white);border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(34,29,85,.10)}
+.stat{border-top:4px solid var(--gold)}
+.stat h3{font-size:32px;color:var(--navy)}
+.stat p{font-size:13px;color:var(--slate);margin-top:4px}
+h2{color:var(--navy);font-size:19px;margin-bottom:14px}
+.btn{padding:9px 16px;border:none;border-radius:6px;font-size:13.5px;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;color:var(--navy);border:1.5px solid var(--slate)}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;padding:10px 12px;background:var(--navy);color:#fff;font-weight:600}
+td{padding:10px 12px;border-bottom:1px solid #e5e2da;vertical-align:top}
+tr:hover td{background:#faf8f3}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.b-draft{background:#eceaf5;color:var(--navy)}
+.b-cco2{background:#fdf3c4;color:#7a6200}
+.b-dir{background:#e3e8f0;color:#3d516e}
+.b-ok{background:#dcebe2;color:var(--green)}
+.b-rej{background:#f6ddd6;color:var(--red)}
+label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin:12px 0 4px}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid #cfcbc0;border-radius:6px;font-size:13.5px;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+textarea{min-height:80px;resize:vertical}
+.modal-bg{position:fixed;inset:0;background:rgba(34,29,85,.55);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:50}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;max-width:640px;width:100%;padding:26px}
+.modal h2{border-bottom:3px solid var(--gold);padding-bottom:8px}
+.flow{display:flex;gap:0;margin:14px 0 20px;flex-wrap:wrap}
+.step{flex:1;min-width:110px;text-align:center;font-size:11.5px;padding:8px 4px;background:#eceaf5;color:var(--slate);position:relative;font-weight:600}
+.step.done{background:var(--green);color:#fff}
+.step.now{background:var(--gold);color:var(--navy)}
+.bell{position:relative;background:var(--navy-light);border:1px solid var(--gold);border-radius:6px;padding:6px 11px;cursor:pointer;font-size:15px;color:#fff}
+.bell-badge{position:absolute;top:-7px;right:-7px;background:var(--red);color:#fff;border-radius:10px;font-size:10.5px;padding:1px 6px;font-weight:700}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;padding:13px 20px;border-left:5px solid var(--gold);border-radius:8px;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:99;display:none;max-width:340px}
+.empty{text-align:center;color:var(--slate);padding:34px;font-size:14px}
+.notif-item{border-left:4px solid var(--gold);background:#fff;border-radius:8px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(34,29,85,.08)}
+.notif-item.trim{border-left-color:var(--green)}
+.notif-item h4{color:var(--navy);font-size:14.5px}
+.notif-item p{font-size:13px;margin:5px 0}
+.notif-item small{color:var(--slate);font-size:11.5px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.searchbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.searchbar input,.searchbar select{width:auto;flex:1;min-width:140px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.hint{font-size:12px;color:var(--slate);margin-top:6px}
+.docx-view{background:#fff;border:1px solid #e5e2da;border-radius:8px;padding:22px;max-height:65vh;overflow:auto;font-size:14px;line-height:1.6}
+.docx-view img{max-width:100%}
+.sheet-view{max-height:65vh;overflow:auto}
+.sheet-view h3{color:var(--navy);font-size:14px;margin:12px 0 6px}
+.sheet-view table{border-collapse:collapse;font-size:12.5px;width:auto}
+.sheet-view td,.sheet-view th{border:1px solid #ddd;padding:4px 9px;background:#fff}
+#login-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:200;flex-direction:column;gap:20px;padding:20px;text-align:center}
+#login-screen h1{color:#fff;letter-spacing:3px;font-size:28px}
+#login-screen h1 span{color:var(--gold)}
+#login-screen p{color:#cfcbe8;font-size:14px;max-width:480px}
+#login-err{color:#ffb4a0;font-size:13px;max-width:560px;white-space:pre-wrap}
+@media print{header,nav,.no-print{display:none!important}main{margin:0}}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <h1>AZTLAN <span>· Cumplimiento</span></h1>
+  <p>Sistema de cumplimiento de Aztlan Equity Management, LLC. Acceso exclusivo con cuenta Microsoft de la empresa.</p>
+  <button class="btn btn-gold" style="font-size:15px;padding:12px 28px" onclick="doLogin()">Iniciar sesión con Microsoft</button>
+  <div id="login-err"></div>
+</div>
+
+<header style="display:none" id="app-header">
+  <img id="logo-img" src="logo.png" alt="Aztlan" style="display:none;height:54px;background:#fff;padding:5px 12px;border-radius:8px"
+    onload="this.style.display='';document.getElementById('logo-fallback').style.display='none'">
+  <div id="logo-fallback">
+    <h1>AZTLAN <span>· Cumplimiento</span></h1>
+    <div style="font-size:11.5px;color:#cfcbe8;letter-spacing:.5px">Equity Management, LLC</div>
+  </div>
+  <div class="role-box">
+    <button class="bell" id="bell" onclick="openInbox()" title="Notificaciones internas">🔔<span id="bell-n" class="bell-badge" style="display:none"></span></button>
+    <span id="who"></span>
+    <button class="btn btn-ghost" style="color:#fff;border-color:var(--gold);padding:6px 12px" onclick="doLogout()">Salir</button>
+  </div>
+</header>
+
+<nav style="display:none" id="app-nav">
+  <button class="active" onclick="show('dash',this)">Panel</button>
+  <button id="nav-docs" onclick="show('docs',this)">Documentos</button>
+  <button onclick="show('notifs',this)">Notificaciones</button>
+  <button id="nav-repo" onclick="show('repo',this)">Repositorio</button>
+</nav>
+
+<main style="display:none" id="app-main">
+
+<section id="dash">
+  <div class="grid">
+    <div class="card stat"><h3 id="st-pend">0</h3><p>Documentos en proceso</p></div>
+    <div class="card stat"><h3 id="st-mine">0</h3><p>Pendientes de tu acción</p></div>
+    <div class="card stat"><h3 id="st-ok">0</h3><p>Documentos aprobados</p></div>
+    <div class="card stat"><h3 id="st-notif">0</h3><p>Notificaciones enviadas</p></div>
+  </div>
+  <div class="card">
+    <h2>Pendientes de tu acción</h2>
+    <div id="dash-pend"></div>
+  </div>
+  <div style="height:16px"></div>
+  <div class="card">
+    <h2>Próximas notificaciones trimestrales</h2>
+    <div id="dash-trim"></div>
+  </div>
+</section>
+
+<section id="docs" style="display:none">
+  <div class="section-head">
+    <h2 style="margin:0">Documentos de cumplimiento</h2>
+    <button class="btn btn-gold" id="btn-new-doc" onclick="openDocForm()">+ Nuevo documento</button>
+  </div>
+  <div class="card" style="padding:0;overflow-x:auto">
+    <table>
+      <thead><tr><th>Documento</th><th>Tipo</th><th>Creado</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody id="doc-rows"></tbody>
+    </table>
+    <div id="doc-empty" class="empty">Aún no hay documentos.</div>
+  </div>
+</section>
+
+<section id="notifs" style="display:none">
+  <div class="grid" style="grid-template-columns:1fr 1.4fr">
+    <div class="card no-print" id="compose-card">
+      <h2>Enviar a todos los colaboradores</h2>
+      <label>Tipo de envío</label>
+      <select id="n-type">
+        <option value="inmediata">Inmediata (en cuanto se recibe)</option>
+        <option value="trimestral">Recurrente cada 3 meses</option>
+      </select>
+      <label>Asunto</label>
+      <input id="n-subj" placeholder="Ej. Actualización de política PLD">
+      <label>Mensaje</label>
+      <textarea id="n-body" placeholder="Contenido del aviso para todos los colaboradores…"></textarea>
+      <div id="n-date-wrap" style="display:none">
+        <label>Primer envío</label>
+        <input type="date" id="n-date">
+        <p class="hint">Se reenviará automáticamente cada 3 meses a partir de esta fecha.</p>
+      </div>
+      <div style="margin-top:16px" class="row">
+        <button class="btn btn-primary" onclick="sendNotif()">Enviar / Programar</button>
+      </div>
+      <hr style="margin:20px 0;border:none;border-top:1px solid #e5e2da">
+      <h2 style="font-size:15px">Correos y roles</h2>
+      <label>Colaboradores (separados por coma)</label>
+      <textarea id="e-emps" style="min-height:56px" placeholder="ana@aztlanem.com, luis@aztlanem.com…" onchange="saveEmails()"></textarea>
+      <label>Correo CCO 1 (elabora)</label>
+      <input id="e-cco1" placeholder="cco1@aztlanem.com" onchange="saveEmails()">
+      <label>Correo CCO 2 (aprueba)</label>
+      <input id="e-cco2" placeholder="cco2@aztlanem.com" onchange="saveEmails()">
+      <label>Correo del jefe (solo lectura de todo)</label>
+      <input id="e-jefe" placeholder="jefe@aztlanem.com" onchange="saveEmails()">
+      <p class="hint">El rol de cada persona se asigna automáticamente según su correo al iniciar sesión. Cualquier otro correo de la empresa entra como colaborador. Los correos se envían de verdad vía Outlook.</p>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h2>Programadas (trimestrales)</h2>
+        <div id="trim-list"></div>
+      </div>
+      <div class="card">
+        <h2>Historial de envíos</h2>
+        <div id="sent-list"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="repo">
+  <h2>Repositorio central</h2>
+  <div class="searchbar no-print">
+    <input id="r-q" placeholder="Buscar por título o contenido…" oninput="renderRepo()">
+    <select id="r-f" onchange="renderRepo()">
+      <option value="">Todo</option>
+      <option value="doc">Documentos</option>
+      <option value="notif">Notificaciones</option>
+      <option value="file">Archivos subidos</option>
+    </select>
+    <select id="r-vis">
+      <option value="cco">Al subir: solo CCO</option>
+      <option value="all">Al subir: visible a colaboradores</option>
+    </select>
+    <input type="file" id="r-file" style="display:none" multiple onchange="uploadFiles(this.files)">
+    <button class="btn btn-gold" id="btn-upload" onclick="document.getElementById('r-file').click()">Subir archivo</button>
+    <button class="btn btn-ghost" id="btn-export" onclick="exportAll()">Exportar respaldo (JSON)</button>
+  </div>
+  <div class="card" style="padding:0;overflow-x:auto">
+    <table>
+      <thead><tr><th>Título</th><th>Categoría</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="repo-rows"></tbody>
+    </table>
+    <div id="repo-empty" class="empty">El repositorio está vacío.</div>
+  </div>
+</section>
+
+</main>
+
+<div class="modal-bg" id="m-doc">
+  <div class="modal">
+    <h2 id="m-doc-title">Nuevo documento</h2>
+    <label>Tipo de documento</label>
+    <select id="d-type">
+      <option>Reporte trimestral de cumplimiento</option>
+      <option>Reporte de operación inusual</option>
+      <option>Matriz de riesgos</option>
+      <option>Acta de comité de cumplimiento</option>
+      <option>Constancia de capacitación</option>
+      <option>Otro</option>
+    </select>
+    <label>Título</label>
+    <input id="d-title" placeholder="Ej. Reporte trimestral Q3 2026">
+    <label>Periodo / fecha del evento</label>
+    <input id="d-period" placeholder="Ej. Julio–Septiembre 2026">
+    <label>Contenido / hallazgos</label>
+    <textarea id="d-body" style="min-height:130px" placeholder="Detalle del documento…"></textarea>
+    <label>Observaciones del CCO 1</label>
+    <textarea id="d-notes" placeholder="Revisión inicial, comentarios…"></textarea>
+    <label>Adjuntar documento (PDF, Word, Excel…)</label>
+    <input type="file" id="d-file" onchange="readDocFile(this)">
+    <p class="hint" id="d-file-cur"></p>
+    <div class="row" style="margin-top:18px">
+      <button class="btn btn-primary" id="d-save" onclick="saveDoc(false)">Guardar borrador</button>
+      <button class="btn btn-gold" id="d-send" onclick="saveDoc(true)">Guardar y enviar a CCO 2</button>
+      <button class="btn btn-ghost" onclick="closeM('m-doc')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-view">
+  <div class="modal">
+    <h2 id="v-title"></h2>
+    <div class="flow" id="v-flow"></div>
+    <div id="v-body" style="font-size:14px;line-height:1.6"></div>
+    <label class="no-print" id="v-cmt-label">Comentario (obligatorio si rechazas)</label>
+    <textarea id="v-cmt" class="no-print"></textarea>
+    <div class="row no-print" style="margin-top:18px" id="v-actions"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-inbox">
+  <div class="modal">
+    <h2>Notificaciones internas</h2>
+    <div id="inbox-list" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:16px"><button class="btn btn-ghost" onclick="closeM('m-inbox')">Cerrar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-file">
+  <div class="modal" style="max-width:920px">
+    <h2 id="f-title"></h2>
+    <div id="f-body" style="margin-top:12px"></div>
+    <div class="row no-print" style="margin-top:16px">
+      <button class="btn btn-primary" id="f-dl">Descargar</button>
+      <button class="btn btn-ghost" onclick="closeM('m-file')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
+var CONFIG = {
+  clientId:  '109c6291-abbb-4da9-8343-59546b46b536', // Id. de aplicación (Entra ID)
+  tenantId:  '3c9ed206-62bf-4678-ada7-c883ee78aab6', // Id. de directorio de Aztlan
+  siteHost:  'aztlanem.sharepoint.com',       // dominio SharePoint de Aztlan
+  sitePath:  '/sites/Cumplimiento',           // ruta del sitio SharePoint
+  listName:  'CumplimientoEstado',            // lista con columna "Data" (varias líneas)
+  folder:    'Cumplimiento'                   // carpeta en Documentos del sitio
+};
+var SCOPES = ['User.Read','Sites.ReadWrite.All','Mail.Send'];
+// ============================================================
+
+var mem = {docs:[], notifs:[], inbox:[], files:[], emails:{}, seq:1};
+var role = 'colab', myEmail = '', myName = '';
+var msalApp = null, account = null, siteId = null, listId = null, itemId = null;
+var ROLES = {cco1:'CCO 1', cco2:'CCO 2', jefe:'Jefe (lectura)', colab:'Colaborador'};
+var STATES = {
+  borrador:      {label:'Borrador (CCO 1)',    cls:'b-draft', owner:'cco1'},
+  revision_cco2: {label:'En aprobación CCO 2', cls:'b-cco2',  owner:'cco2'},
+  aprobado:      {label:'Aprobado',            cls:'b-ok',    owner:null},
+  rechazado:     {label:'Devuelto a CCO 1',    cls:'b-rej',   owner:'cco1'}
+};
+var FLOW = ['borrador','revision_cco2','aprobado'];
+var FLOW_NAMES = ['Elabora CCO 1','Aprueba CCO 2','Aprobado'];
+
+// ---------- utilidades ----------
+function fmt(d){ return new Date(d).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(function(){ t.style.display='none'; }, 4000);
+}
+function esc(s){ return String(s||'').replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+function eqMail(a,b){ return (a||'').trim().toLowerCase() === (b||'').trim().toLowerCase() && (a||'').trim()!==''; }
+
+// ---------- autenticación (MSAL) ----------
+function loginError(msg){
+  document.getElementById('login-err').textContent = msg;
+}
+function doLogin(){
+  msalApp.loginRedirect({scopes:SCOPES});
+}
+function doLogout(){
+  msalApp.logoutRedirect({account:account});
+}
+async function getToken(){
+  try{
+    var r = await msalApp.acquireTokenSilent({scopes:SCOPES, account:account});
+    return r.accessToken;
+  }catch(e){
+    msalApp.acquireTokenRedirect({scopes:SCOPES, account:account});
+    throw e;
+  }
+}
+
+// ---------- Microsoft Graph ----------
+async function graph(path, opts){
+  opts = opts || {};
+  var t = await getToken();
+  var h = Object.assign({'Authorization':'Bearer '+t}, opts.headers||{});
+  var body = opts.body;
+  if(opts.json !== undefined){ h['Content-Type'] = 'application/json'; body = JSON.stringify(opts.json); }
+  var r = await fetch('https://graph.microsoft.com/v1.0'+path, {method:opts.method||'GET', headers:h, body:body});
+  if(!r.ok){
+    var tx = '';
+    try{ tx = await r.text(); }catch(e){}
+    var err = new Error('Graph '+r.status+': '+tx.slice(0,300));
+    err.status = r.status;
+    throw err;
+  }
+  if(r.status===204) return {};
+  var ct = r.headers.get('content-type')||'';
+  return ct.indexOf('json')>=0 ? r.json() : r.blob();
+}
+
+// ---------- arranque ----------
+async function boot(){
+  try{
+    myEmail = (account.username||'').toLowerCase();
+    myName = account.name || myEmail;
+    var site = await graph('/sites/'+CONFIG.siteHost+':'+CONFIG.sitePath);
+    siteId = site.id;
+    var lists = await graph('/sites/'+siteId+'/lists?$filter=displayName eq \''+CONFIG.listName+'\'');
+    if(!lists.value || !lists.value.length){
+      loginError('No se encontró la lista "'+CONFIG.listName+'" en el sitio. Créala según la guía (columna "Data" de varias líneas) y recarga.');
+      return;
+    }
+    listId = lists.value[0].id;
+    var items = await graph('/sites/'+siteId+'/lists/'+listId+'/items?$expand=fields&$top=5');
+    if(items.value && items.value.length){
+      itemId = items.value[0].id;
+      try{
+        var data = JSON.parse(items.value[0].fields.Data || '{}');
+        mem = Object.assign({docs:[],notifs:[],inbox:[],files:[],emails:{},seq:1}, data);
+      }catch(e){}
+    } else {
+      var it = await graph('/sites/'+siteId+'/lists/'+listId+'/items', {method:'POST', json:{fields:{Title:'estado', Data:JSON.stringify(mem)}}});
+      itemId = it.id;
+    }
+    var e = mem.emails||{};
+    if(eqMail(e.cco1, myEmail)) role = 'cco1';
+    else if(eqMail(e.cco2, myEmail)) role = 'cco2';
+    else if(eqMail(e.jefe, myEmail)) role = 'jefe';
+    else if(!(e.cco1||'').trim()){ role = 'cco1'; mem.emails = mem.emails||{}; mem.emails.cco1 = myEmail; save(); toast('Eres la primera persona en entrar: quedaste como CCO 1. Configura los demás correos en Notificaciones.'); }
+    else role = 'colab';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-header').style.display = '';
+    document.getElementById('app-nav').style.display = '';
+    document.getElementById('app-main').style.display = '';
+    document.getElementById('who').textContent = myName+' · '+ROLES[role];
+    applyRole();
+    loadEmails();
+    await runScheduler();
+    show('dash', document.querySelector('nav button'));
+  }catch(err){
+    loginError('Error al conectar con Microsoft 365:\n'+err.message+'\n\nRevisa la configuración (CONFIG) y los permisos de la aplicación.');
+  }
+}
+
+// ---------- guardado compartido ----------
+var _saving = false, _dirty = false;
+function save(){ persist(); }
+async function persist(){
+  if(_saving){ _dirty = true; return; }
+  _saving = true;
+  try{
+    await graph('/sites/'+siteId+'/lists/'+listId+'/items/'+itemId+'/fields', {method:'PATCH', json:{Data: JSON.stringify(mem)}});
+  }catch(e){ toast('Error al guardar en SharePoint: '+e.message); }
+  _saving = false;
+  if(_dirty){ _dirty = false; persist(); }
+}
+async function reloadState(){
+  try{
+    var it = await graph('/sites/'+siteId+'/lists/'+listId+'/items/'+itemId+'?$expand=fields');
+    mem = Object.assign({docs:[],notifs:[],inbox:[],files:[],emails:{},seq:1}, JSON.parse(it.fields.Data||'{}'));
+    renderAll();
+  }catch(e){}
+}
+setInterval(reloadState, 60000);
+
+// ---------- archivos en SharePoint ----------
+async function spUpload(name, blob){
+  var safe = Date.now()+'-'+name.replace(/[^\w.\- ]/g,'_');
+  var it = await graph('/sites/'+siteId+'/drive/root:/'+CONFIG.folder+'/'+encodeURIComponent(safe)+':/content',
+    {method:'PUT', body:blob, headers:{'Content-Type': blob.type||'application/octet-stream'}});
+  return {spId: it.id, name: name, size: blob.size, mime: blob.type||''};
+}
+async function spGetBlob(spId){
+  return await graph('/sites/'+siteId+'/drive/items/'+spId+'/content');
+}
+function blobToDataURL(blob){
+  return new Promise(function(res, rej){
+    var r = new FileReader();
+    r.onload = function(){ res(r.result); };
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+// ---------- correo real (Outlook vía Graph) ----------
+function splitEmails(s){
+  return (s||'').split(',').map(function(x){return x.trim();}).filter(Boolean)
+    .map(function(a){ return {emailAddress:{address:a}}; });
+}
+async function sendMail(to, bcc, subj, body, attach){
+  var msg = {
+    subject: '[Aztlan Cumplimiento] '+subj,
+    body: {contentType:'Text', content: body},
+    toRecipients: splitEmails(to),
+    bccRecipients: splitEmails(bcc)
+  };
+  if(attach){
+    var d = await blobToDataURL(attach.blob);
+    msg.attachments = [{'@odata.type':'#microsoft.graph.fileAttachment', name:attach.name, contentType:attach.mime||'application/octet-stream', contentBytes:d.split(',')[1]}];
+  }
+  await graph('/me/sendMail', {method:'POST', json:{message:msg, saveToSentItems:true}});
+}
+
+// ---------- navegación / rol ----------
+function show(id, btn){
+  ['dash','docs','notifs','repo'].forEach(function(s){ document.getElementById(s).style.display = s===id?'':'none'; });
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  renderAll();
+}
+function applyRole(){
+  var colab = role==='colab';
+  document.getElementById('btn-new-doc').style.display = role==='cco1' ? '' : 'none';
+  document.getElementById('nav-docs').style.display = colab?'none':'';
+  document.getElementById('compose-card').style.display = (role==='cco1'||role==='cco2')?'':'none';
+  document.getElementById('btn-upload').style.display = (role==='cco1'||role==='cco2')?'':'none';
+  document.getElementById('btn-export').style.display = (colab)?'none':'';
+  document.getElementById('r-vis').style.display = (role==='cco1'||role==='cco2')?'':'none';
+}
+
+// ---------- notificaciones internas ----------
+function notifyRole(to, subj, body){
+  if(!mem.inbox) mem.inbox = [];
+  mem.inbox.unshift({id:'I'+(mem.seq++), to:to, subj:subj, body:body, when:today(), read:false});
+  var e = mem.emails||{};
+  var dest = to==='cco1'?e.cco1 : to==='cco2'?e.cco2 : to==='jefe'?e.jefe : '';
+  if(dest && !eqMail(dest, myEmail)){
+    sendMail(dest, '', subj, body+'\n\nEntra al sistema de cumplimiento para atenderlo.').catch(function(){});
+  }
+}
+function renderBell(){
+  var unread = (mem.inbox||[]).filter(function(n){return n.to===role && !n.read;}).length;
+  var b = document.getElementById('bell-n');
+  b.style.display = unread?'':'none';
+  b.textContent = unread;
+}
+function openInbox(){
+  var mine = (mem.inbox||[]).filter(function(n){return n.to===role;});
+  document.getElementById('inbox-list').innerHTML = mine.length ? mine.slice(0,40).map(function(n){
+    return '<div class="notif-item'+(n.read?'':' trim')+'"><h4>'+esc(n.subj)+(n.read?'':' •')+'</h4><p>'+esc(n.body)+'</p><small>'+fmt(n.when)+'</small></div>';
+  }).join('') : '<div class="empty">Sin notificaciones para '+ROLES[role]+'.</div>';
+  mine.forEach(function(n){ n.read = true; });
+  save(); renderBell();
+  document.getElementById('m-inbox').classList.add('open');
+}
+
+// ---------- documentos ----------
+var pendingFile = null;
+function readDocFile(inp){
+  var f = inp.files[0];
+  if(!f) return;
+  if(f.size > 25*1024*1024){ toast('El adjunto excede 25 MB.'); inp.value=''; return; }
+  pendingFile = f;
+  document.getElementById('d-file-cur').textContent = 'Adjunto listo: '+f.name;
+}
+function openDocForm(){
+  ['d-title','d-period','d-body','d-notes'].forEach(function(i){ document.getElementById(i).value=''; });
+  pendingFile = null;
+  document.getElementById('d-file').value = '';
+  document.getElementById('d-file-cur').textContent = '';
+  document.getElementById('m-doc')._editId = null;
+  document.getElementById('m-doc-title').textContent = 'Nuevo documento';
+  document.getElementById('d-save').textContent = 'Guardar borrador';
+  document.getElementById('d-send').style.display = '';
+  document.getElementById('m-doc').classList.add('open');
+}
+function editDoc(id){
+  var d = mem.docs.find(function(x){return x.id===id;});
+  if(!d) return;
+  var revisor = role==='cco2';
+  document.getElementById('d-save').textContent = revisor ? 'Guardar cambios' : 'Guardar borrador';
+  document.getElementById('d-send').style.display = revisor ? 'none' : '';
+  pendingFile = null;
+  document.getElementById('d-file').value = '';
+  document.getElementById('d-file-cur').textContent = d.file ? 'Adjunto actual: '+d.file.name+' (elige otro archivo para reemplazarlo)' : '';
+  document.getElementById('d-type').value = d.type;
+  document.getElementById('d-title').value = d.title;
+  document.getElementById('d-period').value = d.period;
+  document.getElementById('d-body').value = d.body;
+  document.getElementById('d-notes').value = d.notes;
+  document.getElementById('m-doc')._editId = id;
+  document.getElementById('m-doc-title').textContent = 'Editar documento';
+  document.getElementById('m-doc').classList.add('open');
+}
+async function saveDoc(send){
+  var title = document.getElementById('d-title').value.trim();
+  if(!title){ toast('Falta el título del documento.'); return; }
+  var editId = document.getElementById('m-doc')._editId;
+  var d;
+  if(editId){
+    d = mem.docs.find(function(x){return x.id===editId;});
+  } else {
+    d = {id:'D'+(mem.seq++), created:today(), history:[]};
+    mem.docs.unshift(d);
+  }
+  d.type = document.getElementById('d-type').value;
+  d.title = title;
+  d.period = document.getElementById('d-period').value;
+  d.body = document.getElementById('d-body').value;
+  d.notes = document.getElementById('d-notes').value;
+  if(pendingFile){
+    toast('Subiendo adjunto a SharePoint…');
+    try{ d.file = await spUpload(pendingFile.name, pendingFile); }
+    catch(e){ toast('No se pudo subir el adjunto: '+e.message); return; }
+    pendingFile = null;
+  }
+  if(role==='cco2'){
+    d.history.push({when:today(), who:'CCO 2', what:'Editó el documento durante la revisión'});
+    notifyRole('cco1', 'Documento editado por CCO 2', 'CCO 2 hizo cambios en "'+title+'" durante su revisión.');
+    toast('Cambios guardados.');
+  } else {
+    d.state = send ? 'revision_cco2' : 'borrador';
+    d.history.push({when:today(), who:'CCO 1', what: send?'Elaborado y enviado a CCO 2':'Guardado como borrador'});
+    if(send) notifyRole('cco2', 'Documento por aprobar', 'CCO 1 te envió "'+title+'" para revisión y aprobación.');
+    toast(send ? 'Enviado a CCO 2; le llegó aviso por correo.' : 'Borrador guardado.');
+  }
+  save(); closeM('m-doc'); renderAll();
+}
+function viewDoc(id){
+  var d = mem.docs.find(function(x){return x.id===id;});
+  if(!d) return;
+  document.getElementById('v-title').textContent = d.title;
+  var idx = d.state==='rechazado' ? 0 : FLOW.indexOf(d.state);
+  document.getElementById('v-flow').innerHTML = FLOW_NAMES.map(function(n,i){
+    var c = i<idx?'done':(i===idx?(d.state==='aprobado'?'done':'now'):'');
+    return '<div class="step '+c+'">'+n+'</div>';
+  }).join('');
+  var h = '<p><strong>Tipo:</strong> '+esc(d.type)+' &nbsp;·&nbsp; <strong>Periodo:</strong> '+esc(d.period||'—')+' &nbsp;·&nbsp; <strong>Creado:</strong> '+fmt(d.created)+'</p>'
+    + '<p style="margin-top:10px"><strong>Contenido:</strong><br>'+esc(d.body||'—').replace(/\n/g,'<br>')+'</p>'
+    + '<p style="margin-top:10px"><strong>Observaciones CCO 1:</strong><br>'+esc(d.notes||'—')+'</p>'
+    + (d.file ? '<p style="margin-top:10px"><strong>Adjunto:</strong> '+esc(d.file.name)+' ('+kb(d.file.size)+') '
+      + '<button class="btn btn-gold no-print" style="padding:4px 12px;margin-left:6px" onclick="previewAttach(\''+d.id+'\')">Ver</button> '
+      + '<button class="btn btn-ghost no-print" style="padding:4px 12px" onclick="downloadAttach(\''+d.id+'\')">Descargar</button></p>' : '')
+    + '<p style="margin-top:12px"><strong>Historial:</strong></p><ul style="margin-left:18px">'
+    + d.history.map(function(e){ return '<li><small>'+fmt(e.when)+' — '+esc(e.who)+': '+esc(e.what)+(e.cmt?' · "'+esc(e.cmt)+'"':'')+'</small></li>'; }).join('')
+    + '</ul>';
+  document.getElementById('v-body').innerHTML = h;
+  document.getElementById('v-cmt').value = '';
+  var acts = [];
+  var canAct = STATES[d.state].owner === role || (d.state==='rechazado' && role==='cco1');
+  if(canAct){
+    if(role==='cco1' && (d.state==='borrador'||d.state==='rechazado')){
+      acts.push('<button class="btn btn-ghost" onclick="closeM(\'m-view\');editDoc(\''+d.id+'\')">Editar</button>');
+      acts.push('<button class="btn btn-gold" onclick="advance(\''+d.id+'\',true)">Enviar a CCO 2</button>');
+    }
+    if(role==='cco2' && d.state==='revision_cco2'){
+      acts.push('<button class="btn btn-ghost" onclick="closeM(\'m-view\');editDoc(\''+d.id+'\')">Editar</button>');
+      acts.push('<button class="btn btn-green" onclick="advance(\''+d.id+'\',true)">Aprobación final</button>');
+      acts.push('<button class="btn btn-red" onclick="advance(\''+d.id+'\',false)">Rechazar</button>');
+    }
+  }
+  if(d.state!=='aprobado' && STATES[d.state].owner!==role && (role==='cco1'||role==='cco2'||role==='jefe')){
+    acts.push('<button class="btn btn-primary" onclick="remindDoc(\''+d.id+'\')">Recordatorio por correo</button>');
+  }
+  if(d.state==='aprobado' && (role==='cco1'||role==='cco2')){
+    acts.push('<button class="btn btn-gold" onclick="sendThird(\''+d.id+'\')">Enviar a tercero</button>');
+    acts.push('<button class="btn btn-red" onclick="delDoc(\''+d.id+'\')">Eliminar</button>');
+  }
+  acts.push('<button class="btn btn-ghost" onclick="window.print()">Imprimir / PDF</button>');
+  acts.push('<button class="btn btn-ghost" onclick="closeM(\'m-view\')">Cerrar</button>');
+  var showCmt = canAct;
+  document.getElementById('v-cmt').style.display = showCmt?'':'none';
+  document.getElementById('v-cmt-label').style.display = showCmt?'':'none';
+  document.getElementById('v-actions').innerHTML = acts.join('');
+  document.getElementById('m-view').classList.add('open');
+}
+function advance(id, approve){
+  var d = mem.docs.find(function(x){return x.id===id;});
+  if(!d) return;
+  var cmt = document.getElementById('v-cmt').value.trim();
+  if(!approve && !cmt){ toast('Escribe el motivo del rechazo.'); return; }
+  var who = ROLES[role];
+  if(!approve){
+    d.state = 'rechazado';
+    d.history.push({when:today(), who:who, what:'Rechazó el documento', cmt:cmt});
+    notifyRole('cco1', 'Documento devuelto', who+' devolvió "'+d.title+'": '+cmt);
+  } else if(role==='cco1'){
+    d.state = 'revision_cco2';
+    d.history.push({when:today(), who:who, what:'Reenviado a CCO 2', cmt:cmt});
+    notifyRole('cco2', 'Documento por aprobar', 'CCO 1 reenvió "'+d.title+'" con correcciones.');
+  } else if(role==='cco2'){
+    d.state = 'aprobado';
+    d.approvedOn = today();
+    d.history.push({when:today(), who:who, what:'Aprobación final', cmt:cmt});
+    notifyRole('cco1', 'Documento aprobado', '"'+d.title+'" fue aprobado por CCO 2 y quedó archivado en el repositorio.');
+  }
+  save(); closeM('m-view'); renderAll();
+  toast(approve ? 'Documento avanzado en el flujo.' : 'Documento devuelto a CCO 1.');
+}
+function delDoc(id){
+  var d = mem.docs.find(function(x){return x.id===id;});
+  if(!d) return;
+  if(!confirm('¿Eliminar definitivamente "'+d.title+'"? Se borrará también del repositorio y no se puede deshacer.')) return;
+  mem.docs = mem.docs.filter(function(x){return x.id!==id;});
+  save(); closeM('m-view'); renderAll();
+  toast('Documento eliminado.');
+}
+async function sendThird(id){
+  var d = mem.docs.find(function(x){return x.id===id;});
+  if(!d) return;
+  var to = prompt('Correo del tercero (destinatario):', mem.lastThird||'');
+  if(!to) return;
+  mem.lastThird = to.trim();
+  var attach = null;
+  if(d.file){
+    try{
+      toast('Preparando adjunto…');
+      var blob = await spGetBlob(d.file.spId);
+      if(blob.size < 20*1024*1024) attach = {name:d.file.name, mime:d.file.mime, blob:blob};
+    }catch(e){}
+  }
+  try{
+    await sendMail(to.trim(), '', 'Documento aprobado: '+d.title,
+      'Estimado(a):\n\nLe compartimos el documento "'+d.title+'" ('+d.type+'), aprobado el '+fmt(d.approvedOn||today())+'.\n\n'
+      + (d.body ? d.body+'\n\n' : '')
+      + '— Área de Cumplimiento, Aztlan Equity Management, LLC', attach);
+    d.history.push({when:today(), who:ROLES[role], what:'Enviado a tercero: '+to.trim()});
+    save(); renderAll();
+    toast('Correo enviado a '+to.trim()+(attach?' con el adjunto.':'.'));
+  }catch(e){ toast('No se pudo enviar: '+e.message); }
+}
+async function remindDoc(id){
+  var d = mem.docs.find(function(x){return x.id===id;});
+  if(!d) return;
+  var e = mem.emails||{};
+  var owner = STATES[d.state].owner;
+  var to = owner==='cco2' ? e.cco2 : e.cco1;
+  if(!to){ toast('Captura el correo de '+ROLES[owner]+' en Notificaciones → Correos.'); return; }
+  try{
+    await sendMail(to, '', 'Recordatorio: "'+d.title+'"',
+      'Hola,\n\nEl documento "'+d.title+'" ('+d.type+') está pendiente de tu acción: '+STATES[d.state].label+'.\n\nPor favor atiéndelo en el sistema de cumplimiento.\n\n— Aztlan Cumplimiento');
+    toast('Recordatorio enviado a '+to+'.');
+  }catch(e2){ toast('No se pudo enviar: '+e2.message); }
+}
+function renderDocs(){
+  var tb = document.getElementById('doc-rows'); tb.innerHTML = '';
+  mem.docs.forEach(function(d){
+    var s = STATES[d.state];
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><strong>'+esc(d.title)+'</strong>'+(d.file?' 📎':'')+'</td><td>'+esc(d.type)+'</td><td>'+fmt(d.created)+'</td>'
+      + '<td><span class="badge '+s.cls+'">'+s.label+'</span></td>'
+      + '<td><button class="btn btn-ghost" style="padding:5px 12px" onclick="viewDoc(\''+d.id+'\')">Abrir</button></td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('doc-empty').style.display = mem.docs.length?'none':'';
+}
+
+// ---------- correos / roles ----------
+function saveEmails(){
+  mem.emails = {
+    emps: document.getElementById('e-emps').value.trim(),
+    cco1: document.getElementById('e-cco1').value.trim(),
+    cco2: document.getElementById('e-cco2').value.trim(),
+    jefe: document.getElementById('e-jefe').value.trim()
+  };
+  save(); toast('Correos y roles guardados.');
+}
+function loadEmails(){
+  var e = mem.emails||{};
+  document.getElementById('e-emps').value = e.emps||'';
+  document.getElementById('e-cco1').value = e.cco1||'';
+  document.getElementById('e-cco2').value = e.cco2||'';
+  document.getElementById('e-jefe').value = e.jefe||'';
+}
+
+// ---------- notificaciones a colaboradores ----------
+async function emailNotif(id){
+  var n = mem.notifs.find(function(x){return x.id===id;});
+  if(!n) return;
+  var e = mem.emails||{};
+  if(!e.emps){ toast('Primero captura los correos de los colaboradores.'); return; }
+  try{
+    await sendMail('', e.emps, n.subj, n.body + '\n\n— Área de Cumplimiento, Aztlan Equity Management, LLC');
+    toast('Notificación enviada por correo a los colaboradores.');
+  }catch(err){ toast('No se pudo enviar: '+err.message); }
+}
+async function sendNotif(){
+  var kind = document.getElementById('n-type').value;
+  var subj = document.getElementById('n-subj').value.trim();
+  var body = document.getElementById('n-body').value.trim();
+  if(!subj || !body){ toast('Completa asunto y mensaje.'); return; }
+  var n = {id:'N'+(mem.seq++), kind:kind, subj:subj, body:body, sent:[]};
+  if(kind==='trimestral'){
+    var start = document.getElementById('n-date').value || today();
+    n.next = start;
+    if(start <= today()){
+      n.sent.push(today()); n.next = plus3m(start);
+      mem.notifs.unshift(n); save();
+      await emailNotif(n.id);
+    } else {
+      mem.notifs.unshift(n); save();
+      toast('Programada. Próximo envío automático: '+fmt(n.next));
+    }
+  } else {
+    n.sent.push(today());
+    mem.notifs.unshift(n); save();
+    await emailNotif(n.id);
+  }
+  document.getElementById('n-subj').value=''; document.getElementById('n-body').value='';
+  renderAll();
+}
+function plus3m(iso){
+  var d = new Date(iso+'T12:00:00'); d.setMonth(d.getMonth()+3);
+  return d.toISOString().slice(0,10);
+}
+async function runScheduler(){
+  if(role!=='cco1' && role!=='cco2') return;
+  var e = mem.emails||{};
+  var changed = false;
+  for(var i=0;i<(mem.notifs||[]).length;i++){
+    var n = mem.notifs[i];
+    if(n.kind!=='trimestral' || !n.next) continue;
+    while(n.next <= today()){
+      n.sent.push(n.next); n.next = plus3m(n.next); changed = true;
+      if(e.emps){
+        try{ await sendMail('', e.emps, n.subj, n.body+'\n\n— Área de Cumplimiento, Aztlan Equity Management, LLC'); }catch(err){}
+      }
+    }
+  }
+  if(changed){ save(); toast('Se enviaron notificaciones trimestrales vencidas por correo.'); }
+}
+function delNotif(id){
+  mem.notifs = mem.notifs.filter(function(n){return n.id!==id;});
+  save(); renderAll(); toast('Programación cancelada.');
+}
+function renderNotifs(){
+  var trims = mem.notifs.filter(function(n){return n.kind==='trimestral';});
+  var canManage = role==='cco1'||role==='cco2';
+  var t = document.getElementById('trim-list');
+  t.innerHTML = trims.length ? trims.map(function(n){
+    return '<div class="notif-item trim"><h4>'+esc(n.subj)+'</h4><p>'+esc(n.body)+'</p>'
+      + '<small>Próximo envío: <strong>'+fmt(n.next)+'</strong> · Enviada '+n.sent.length+' vez(ces)</small>'
+      + (canManage?'<div style="margin-top:8px" class="row"><button class="btn btn-primary" style="padding:4px 10px;font-size:11.5px" onclick="emailNotif(\''+n.id+'\')">Enviar por correo ahora</button>'
+      + '<button class="btn btn-red" style="padding:4px 10px;font-size:11.5px" onclick="delNotif(\''+n.id+'\')">Cancelar</button></div>':'')+'</div>';
+  }).join('') : '<div class="empty">Sin envíos trimestrales programados.</div>';
+  var sent = [];
+  mem.notifs.forEach(function(n){
+    n.sent.forEach(function(when){ sent.push({when:when, n:n}); });
+  });
+  sent.sort(function(a,b){ return a.when<b.when?1:-1; });
+  var s = document.getElementById('sent-list');
+  s.innerHTML = sent.length ? sent.slice(0,30).map(function(e){
+    return '<div class="notif-item'+(e.n.kind==='trimestral'?' trim':'')+'"><h4>'+esc(e.n.subj)+'</h4><p>'+esc(e.n.body)+'</p>'
+      + '<small>'+fmt(e.when)+' · '+(e.n.kind==='trimestral'?'Trimestral':(e.n.auto?'Automática':'Inmediata'))+' · Todos los colaboradores</small>'
+      + (canManage?'<div style="margin-top:8px"><button class="btn btn-ghost" style="padding:4px 10px;font-size:11.5px" onclick="emailNotif(\''+e.n.id+'\')">Reenviar por correo</button></div>':'')+'</div>';
+  }).join('') : '<div class="empty">Sin envíos todavía.</div>';
+}
+
+// ---------- archivos del repositorio ----------
+async function uploadFiles(list){
+  if(!mem.files) mem.files = [];
+  var shared = document.getElementById('r-vis').value==='all';
+  for(var i=0;i<list.length;i++){
+    var f = list[i];
+    if(f.size > 25*1024*1024){ toast('"'+f.name+'" excede 25 MB.'); continue; }
+    toast('Subiendo '+f.name+'…');
+    try{
+      var meta = await spUpload(f.name, f);
+      mem.files.unshift(Object.assign({id:'F'+(mem.seq++), date:today(), by:ROLES[role], shared:shared}, meta));
+    }catch(e){ toast('Error al subir "'+f.name+'": '+e.message); }
+  }
+  document.getElementById('r-file').value = '';
+  save(); renderAll(); toast('Archivo(s) en el repositorio de SharePoint.');
+}
+async function viewFile(id){
+  var f = (mem.files||[]).find(function(x){return x.id===id;});
+  if(!f) return;
+  try{
+    toast('Abriendo…');
+    var blob = await spGetBlob(f.spId);
+    var data = await blobToDataURL(blob);
+    previewData(f.name, f.mime, data, function(){ downloadFile(id); });
+  }catch(e){ toast('No se pudo abrir: '+e.message); }
+}
+async function downloadFile(id){
+  var f = (mem.files||[]).find(function(x){return x.id===id;});
+  if(!f) return;
+  try{
+    var blob = await spGetBlob(f.spId);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = f.name; a.click();
+  }catch(e){ toast('No se pudo descargar: '+e.message); }
+}
+async function previewAttach(docId){
+  var d = mem.docs.find(function(x){return x.id===docId;});
+  if(!d || !d.file) return;
+  try{
+    toast('Abriendo…');
+    var blob = await spGetBlob(d.file.spId);
+    var data = await blobToDataURL(blob);
+    previewData(d.file.name, d.file.mime, data, function(){ downloadAttach(docId); });
+  }catch(e){ toast('No se pudo abrir: '+e.message); }
+}
+async function downloadAttach(docId){
+  var d = mem.docs.find(function(x){return x.id===docId;});
+  if(!d || !d.file) return;
+  try{
+    var blob = await spGetBlob(d.file.spId);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = d.file.name; a.click();
+  }catch(e){ toast('No se pudo descargar: '+e.message); }
+}
+async function delFile(id){
+  var f = (mem.files||[]).find(function(x){return x.id===id;});
+  if(!f) return;
+  if(!confirm('¿Eliminar "'+f.name+'" del repositorio?')) return;
+  try{ await graph('/sites/'+siteId+'/drive/items/'+f.spId, {method:'DELETE'}); }catch(e){}
+  mem.files = mem.files.filter(function(x){return x.id!==id;});
+  save(); renderAll(); toast('Archivo eliminado.');
+}
+function toggleShare(id){
+  var it = (mem.files||[]).find(function(x){return x.id===id;}) || mem.docs.find(function(x){return x.id===id;});
+  if(!it) return;
+  it.shared = !it.shared;
+  save(); renderAll();
+  toast(it.shared ? 'Ahora es visible para los colaboradores.' : 'Oculto para los colaboradores.');
+}
+function kb(n){ return n>1048576 ? (n/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(n/1024))+' KB'; }
+
+// ---------- vista previa ----------
+var libsLoaded = {};
+function loadLib(url, cb){
+  if(libsLoaded[url]){ cb(true); return; }
+  var s = document.createElement('script');
+  s.src = url;
+  s.onload = function(){ libsLoaded[url] = true; cb(true); };
+  s.onerror = function(){ cb(false); };
+  document.head.appendChild(s);
+}
+function dataToBuf(data){
+  var b = atob(data.split(',')[1]);
+  var u = new Uint8Array(b.length);
+  for(var i=0;i<b.length;i++) u[i] = b.charCodeAt(i);
+  return u.buffer;
+}
+function previewData(name, mime, data, dl){
+  document.getElementById('f-title').textContent = name;
+  var c = document.getElementById('f-body');
+  var m = mime||'';
+  var ext = (name.split('.').pop()||'').toLowerCase();
+  var noPrev = '<div class="empty">Este tipo de archivo no se puede previsualizar. Usa "Descargar" para abrirlo.</div>';
+  var isDocx = m==='application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext==='docx';
+  var isXlsx = m==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || m==='application/vnd.ms-excel' || ext==='xlsx' || ext==='xls';
+  if(m.indexOf('image/')===0){
+    c.innerHTML = '<img src="'+data+'" style="max-width:100%;border-radius:8px">';
+  } else if(m==='application/pdf' || ext==='pdf'){
+    c.innerHTML = '<iframe src="'+data+'" style="width:100%;height:70vh;border:1px solid #e5e2da;border-radius:8px"></iframe>';
+  } else if(isDocx){
+    c.innerHTML = '<div class="empty">Abriendo documento de Word…</div>';
+    loadLib('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js', function(ok){
+      if(!ok){ c.innerHTML = noPrev; return; }
+      mammoth.convertToHtml({arrayBuffer:dataToBuf(data)}).then(function(res){
+        c.innerHTML = '<div class="docx-view">'+res.value+'</div>';
+      }).catch(function(){ c.innerHTML = noPrev; });
+    });
+  } else if(isXlsx){
+    c.innerHTML = '<div class="empty">Abriendo hoja de cálculo…</div>';
+    loadLib('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', function(ok){
+      if(!ok){ c.innerHTML = noPrev; return; }
+      try{
+        var wb = XLSX.read(dataToBuf(data), {type:'array'});
+        var h = '';
+        wb.SheetNames.forEach(function(sn){
+          h += '<h3>'+esc(sn)+'</h3>' + XLSX.utils.sheet_to_html(wb.Sheets[sn], {header:'',footer:''});
+        });
+        c.innerHTML = '<div class="sheet-view">'+h+'</div>';
+      }catch(e){ c.innerHTML = noPrev; }
+    });
+  } else if(m.indexOf('text/')===0 || m==='application/json' || ext==='csv' || ext==='txt'){
+    var txt = '';
+    try{ txt = decodeURIComponent(escape(atob(data.split(',')[1]))); }catch(e){ try{ txt = atob(data.split(',')[1]); }catch(e2){ txt = '(no se pudo leer)'; } }
+    c.innerHTML = '<pre style="white-space:pre-wrap;background:#faf8f3;padding:14px;border-radius:8px;max-height:60vh;overflow:auto;font-size:13px">'+esc(txt)+'</pre>';
+  } else {
+    c.innerHTML = noPrev;
+  }
+  document.getElementById('f-dl').onclick = dl;
+  document.getElementById('m-file').classList.add('open');
+}
+
+// ---------- repositorio ----------
+function renderRepo(){
+  var q = (document.getElementById('r-q').value||'').toLowerCase();
+  var f = document.getElementById('r-f').value;
+  var colab = role==='colab';
+  var canManage = role==='cco1'||role==='cco2';
+  var items = [];
+  mem.docs.forEach(function(d){
+    if(colab && !(d.shared && d.state==='aprobado')) return;
+    items.push({cat:'doc', title:d.title, sub:d.type, date:d.approvedOn||d.created, state:d.state, id:d.id, shared:!!d.shared, canShare:d.state==='aprobado', txt:(d.title+' '+d.body+' '+d.type).toLowerCase()});
+  });
+  if(!colab) mem.notifs.forEach(function(n){
+    if(!n.sent.length) return;
+    items.push({cat:'notif', title:n.subj, sub:(n.kind==='trimestral'?'Notificación trimestral':'Notificación inmediata'), date:n.sent[n.sent.length-1], state:null, id:n.id, txt:(n.subj+' '+n.body).toLowerCase()});
+  });
+  (mem.files||[]).forEach(function(fl){
+    if(colab && !fl.shared) return;
+    items.push({cat:'file', title:fl.name, sub:'Archivo subido · '+kb(fl.size)+' · '+fl.by, date:fl.date, state:null, id:fl.id, shared:!!fl.shared, canShare:true, txt:fl.name.toLowerCase()});
+  });
+  items = items.filter(function(i){
+    return (!f || i.cat===f) && (!q || i.txt.indexOf(q)>=0);
+  }).sort(function(a,b){ return a.date<b.date?1:-1; });
+  var tb = document.getElementById('repo-rows'); tb.innerHTML = '';
+  items.forEach(function(i){
+    var st = i.state ? '<span class="badge '+STATES[i.state].cls+'">'+STATES[i.state].label+'</span>'
+      : (i.cat==='file' ? '<span class="badge b-dir">Archivo</span>' : '<span class="badge b-ok">Enviada</span>');
+    if(i.shared) st += ' <span class="badge b-ok">Colaboradores</span>';
+    var acts = [];
+    if(i.cat==='doc') acts.push('<button class="btn btn-ghost" style="padding:5px 12px" onclick="viewDoc(\''+i.id+'\')">Abrir</button>');
+    if(i.cat==='file') acts.push('<button class="btn btn-gold" style="padding:5px 12px" onclick="viewFile(\''+i.id+'\')">Ver</button>'
+      + '<button class="btn btn-ghost" style="padding:5px 12px" onclick="downloadFile(\''+i.id+'\')">Descargar</button>');
+    if(canManage && i.canShare) acts.push('<button class="btn '+(i.shared?'btn-primary':'btn-gold')+'" style="padding:5px 12px" onclick="toggleShare(\''+i.id+'\')">'+(i.shared?'Ocultar a colab.':'Compartir')+'</button>');
+    if(canManage && i.cat==='file') acts.push('<button class="btn btn-red" style="padding:5px 12px" onclick="delFile(\''+i.id+'\')">Eliminar</button>');
+    var open = acts.length ? '<div class="row">'+acts.join('')+'</div>' : '';
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><strong>'+esc(i.title)+'</strong></td><td>'+esc(i.sub)+'</td><td>'+fmt(i.date)+'</td><td>'+st+'</td><td>'+open+'</td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('repo-empty').style.display = items.length?'none':'';
+}
+function exportAll(){
+  var blob = new Blob([JSON.stringify(mem,null,2)],{type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'respaldo-cumplimiento-aztlan-'+today()+'.json';
+  a.click();
+}
+
+// ---------- panel ----------
+function renderDash(){
+  var proc = mem.docs.filter(function(d){return d.state!=='aprobado';});
+  var mine = mem.docs.filter(function(d){return STATES[d.state].owner===role;});
+  document.getElementById('st-pend').textContent = proc.length;
+  document.getElementById('st-mine').textContent = mine.length;
+  document.getElementById('st-ok').textContent = mem.docs.filter(function(d){return d.state==='aprobado';}).length;
+  var tot = 0; mem.notifs.forEach(function(n){ tot += n.sent.length; });
+  document.getElementById('st-notif').textContent = tot;
+  var p = document.getElementById('dash-pend');
+  p.innerHTML = mine.length ? mine.map(function(d){
+    return '<div class="notif-item"><h4>'+esc(d.title)+'</h4><small>'+esc(d.type)+' · '+STATES[d.state].label+'</small>'
+      + '<div style="margin-top:8px"><button class="btn btn-gold" style="padding:5px 12px" onclick="viewDoc(\''+d.id+'\')">Atender</button></div></div>';
+  }).join('') : '<div class="empty">Nada pendiente para '+ROLES[role]+'.</div>';
+  var trims = mem.notifs.filter(function(n){return n.kind==='trimestral';});
+  document.getElementById('dash-trim').innerHTML = trims.length ? trims.map(function(n){
+    return '<div class="notif-item trim"><h4>'+esc(n.subj)+'</h4><small>Próximo envío: <strong>'+fmt(n.next)+'</strong></small></div>';
+  }).join('') : '<div class="empty">Sin envíos trimestrales programados.</div>';
+}
+
+function renderAll(){ renderDocs(); renderNotifs(); renderRepo(); renderDash(); renderBell(); }
+
+document.getElementById('n-type').addEventListener('change', function(){
+  document.getElementById('n-date-wrap').style.display = this.value==='trimestral'?'':'none';
+});
+document.querySelectorAll('.modal-bg').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ---------- inicio ----------
+(function(){
+  if(window.location.protocol==='file:'){
+    loginError('Este sitio debe abrirse desde una dirección web (https), no como archivo local.');
+    return;
+  }
+  msalApp = new msal.PublicClientApplication({
+    auth:{
+      clientId: CONFIG.clientId,
+      authority: 'https://login.microsoftonline.com/'+CONFIG.tenantId,
+      redirectUri: window.location.origin + window.location.pathname
+    },
+    cache:{cacheLocation:'localStorage'}
+  });
+  msalApp.handleRedirectPromise().then(function(res){
+    if(res && res.account) account = res.account;
+    if(!account){
+      var accs = msalApp.getAllAccounts();
+      if(accs.length) account = accs[0];
+    }
+    if(account) boot();
+  }).catch(function(e){ loginError('Error de inicio de sesión: '+e.message); });
+})();
+</script>
+</body>
+</html>
